@@ -1,6 +1,6 @@
 # DependencyInjection.ServiceCollectionExtensions
 
-There are two features I would like to see added to `Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions`, both that would be solved with one two extension method.
+There are two features I would like to see added to `Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions`, both that can be added with a couple of extension methods.
 
 The first is to be able to specify the lifetime when adding services to the collection. As a library maintainer, people have asked me to add a one line "services.AddLibrary()" extension method, but currently the easiest way to implement Transient, Singleton, or Scoped service lifetimes is to copy and paste registrations then rename. The service collection has a way to do this, but it is not exposed for external usage.
 

@@ -111,15 +111,39 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void Services_Should_Be_Same_Instance_When_Registered_With_Custom_Transient_Factory()
+    public void Services_Should_Be_Same_Instance_When_Registered_With_AddTransient()
     {
         // Arrange
         var services = new ServiceCollection();
 
         // Register services
-        services.AddTransient<I1, I2, I3, Concrete>((_) => new Concrete());
+        services.AddTransient<I1, I2, I3, Concrete>();
         services.AddTransient<I4, I5, Service>(provider => new Service(provider.GetRequiredService<I2>()));
         services.AddTransient<I6, I7, Api>(provider => new Api(provider.GetRequiredService<I5>()));
+
+        // Build the service provider
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Act
+        var i1 = serviceProvider.GetRequiredService<I1>();
+        var i2 = serviceProvider.GetRequiredService<I2>();
+        var i3 = serviceProvider.GetRequiredService<I3>();
+
+        // Assert
+        Assert.Same(i1, i2);
+        Assert.Same(i2, i3);
+    }
+
+    [Fact]
+    public void Services_Should_Be_Same_Instance_When_Registered_With_Add_Transient()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        // Register services
+        services.Add<Concrete>(ServiceLifetime.Transient, typeof(I1), typeof(I2), typeof(I3));
+        services.Add<Service>(provider => new Service(provider.GetRequiredService<I2>()), ServiceLifetime.Transient, typeof(I4), typeof(I5));
+        services.Add<Api>(provider => new Api(provider.GetRequiredService<I5>()), ServiceLifetime.Transient, typeof(I6), typeof(I7));
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();

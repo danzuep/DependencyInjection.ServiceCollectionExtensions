@@ -95,7 +95,32 @@ public class ServiceCollectionExtensionsTests
         var services = new ServiceCollection();
 
         // Register services
-        services.Add<I1, I2, I3, Concrete>((_) => new Concrete(), serviceLifetime);
+        services.Add<I1, I2, I3, Concrete>(serviceLifetime, (_) => new Concrete());
+
+        // Build the service provider
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Act
+        var i1 = serviceProvider.GetRequiredService<I1>();
+        var i2 = serviceProvider.GetRequiredService<I2>();
+        var i3 = serviceProvider.GetRequiredService<I3>();
+
+        // Assert
+        Assert.Same(i1, i2);
+        Assert.Same(i2, i3);
+    }
+
+    [Theory]
+    [InlineData(ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Transient)]
+    public void Services_Should_Be_Same_Instance_When_Registered_With_Add(ServiceLifetime serviceLifetime)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        // Register services
+        services.Add<I1, I2, I3, Concrete>(serviceLifetime);
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();
@@ -142,8 +167,8 @@ public class ServiceCollectionExtensionsTests
 
         // Register services
         services.Add<Concrete>(ServiceLifetime.Transient, typeof(I1), typeof(I2), typeof(I3));
-        services.Add<Service>(provider => new Service(provider.GetRequiredService<I2>()), ServiceLifetime.Transient, typeof(I4), typeof(I5));
-        services.Add<Api>(provider => new Api(provider.GetRequiredService<I5>()), ServiceLifetime.Transient, typeof(I6), typeof(I7));
+        services.Add<Service>(ServiceLifetime.Transient, provider => new Service(provider.GetRequiredService<I2>()), typeof(I4), typeof(I5));
+        services.Add<Api>(ServiceLifetime.Transient, provider => new Api(provider.GetRequiredService<I5>()), typeof(I6), typeof(I7));
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();

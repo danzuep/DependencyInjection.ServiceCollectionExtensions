@@ -5,178 +5,165 @@ using Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddSingleton<T1, T2, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection AddSingleton<T1, T2, TImplementation>(
         this IServiceCollection services,
         Func<IServiceProvider, TImplementation> implementationFactory)
         where T1 : class
         where T2 : class
         where TImplementation : class, T1, T2 =>
-        services.Add(implementationFactory, ServiceLifetime.Singleton, typeof(T1), typeof(T2));
+        services.Add(ServiceLifetime.Singleton, implementationFactory, typeof(T1), typeof(T2));
 
-    public static IServiceCollection AddSingleton<T1, T2, T3, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection AddSingleton<T1, T2, T3, TImplementation>(
         this IServiceCollection services,
         Func<IServiceProvider, TImplementation> implementationFactory)
         where T1 : class
         where T2 : class
         where T3 : class
         where TImplementation : class, T1, T2, T3 =>
-        services.Add(implementationFactory, ServiceLifetime.Singleton, typeof(T1), typeof(T2), typeof(T3));
+        services.Add(ServiceLifetime.Singleton, implementationFactory, typeof(T1), typeof(T2), typeof(T3));
 
-    public static IServiceCollection AddTransient<T1, T2, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection AddTransient<T1, T2, TImplementation>(
         this IServiceCollection services,
         Func<IServiceProvider, TImplementation> implementationFactory)
         where T1 : class
         where T2 : class
         where TImplementation : class, T1, T2 =>
-        services.Add(implementationFactory, ServiceLifetime.Transient, typeof(T1), typeof(T2));
+        services.Add(ServiceLifetime.Transient, implementationFactory, typeof(T1), typeof(T2));
 
-    public static IServiceCollection AddTransient<T1, T2, T3, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection AddTransient<T1, T2, T3, TImplementation>(
         this IServiceCollection services,
         Func<IServiceProvider, TImplementation> implementationFactory)
         where T1 : class
         where T2 : class
         where T3 : class
         where TImplementation : class, T1, T2, T3 =>
-        services.Add(implementationFactory, ServiceLifetime.Transient, typeof(T1), typeof(T2), typeof(T3));
+        services.Add(ServiceLifetime.Transient, implementationFactory, typeof(T1), typeof(T2), typeof(T3));
 
-    public static IServiceCollection AddScoped<T1, T2, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection AddScoped<T1, T2, TImplementation>(
         this IServiceCollection services,
         Func<IServiceProvider, TImplementation> implementationFactory)
         where T1 : class
         where T2 : class
         where TImplementation : class, T1, T2 =>
-        services.Add(implementationFactory, ServiceLifetime.Scoped, typeof(T1), typeof(T2));
+        services.Add(ServiceLifetime.Scoped, implementationFactory, typeof(T1), typeof(T2));
 
-    public static IServiceCollection AddScoped<T1, T2, T3, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection AddScoped<T1, T2, T3, TImplementation>(
         this IServiceCollection services,
         Func<IServiceProvider, TImplementation> implementationFactory)
         where T1 : class
         where T2 : class
         where T3 : class
         where TImplementation : class, T1, T2, T3 =>
-        services.Add(implementationFactory, ServiceLifetime.Scoped, typeof(T1), typeof(T2), typeof(T3));
+        services.Add(ServiceLifetime.Scoped, implementationFactory, typeof(T1), typeof(T2), typeof(T3));
 
-    public static IServiceCollection Add<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection Add<TService, TImplementation>(
         this IServiceCollection services,
-        Func<IServiceProvider, TImplementation> implementationFactory,
-        ServiceLifetime serviceLifetime)
+        ServiceLifetime serviceLifetime,
+        Func<IServiceProvider, TImplementation> implementationFactory)
         where TService : class
         where TImplementation : class, TService =>
-        services.Add(implementationFactory, serviceLifetime, typeof(TService));
+        services.Add(serviceLifetime, implementationFactory, typeof(TService));
 
-    public static IServiceCollection Add<T1, T2, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection Add<T1, T2, TImplementation>(
         this IServiceCollection services,
-        Func<IServiceProvider, TImplementation> implementationFactory,
-        ServiceLifetime serviceLifetime)
+        ServiceLifetime serviceLifetime,
+        Func<IServiceProvider, TImplementation> implementationFactory)
         where T1 : class
         where T2 : class
         where TImplementation : class, T1, T2 =>
-        services.Add(implementationFactory, serviceLifetime, typeof(T1), typeof(T2));
+        services.Add(serviceLifetime, implementationFactory, typeof(T1), typeof(T2));
 
-    public static IServiceCollection Add<T1, T2, T3, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection Add<T1, T2, T3, TImplementation>(
         this IServiceCollection services,
-        Func<IServiceProvider, TImplementation> implementationFactory,
-        ServiceLifetime serviceLifetime)
+        ServiceLifetime serviceLifetime,
+        Func<IServiceProvider, TImplementation> implementationFactory)
         where T1 : class
         where T2 : class
         where T3 : class
         where TImplementation : class, T1, T2, T3 =>
-        services.Add(implementationFactory, serviceLifetime, typeof(T1), typeof(T2), typeof(T3));
+        services.Add(serviceLifetime, implementationFactory, typeof(T1), typeof(T2), typeof(T3));
 
-    public static IServiceCollection Add<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
-        this IServiceCollection services,
-        Func<IServiceProvider, TImplementation> implementationFactory,
-        ServiceLifetime serviceLifetime,
-        params Type[] serviceTypes)
-        where TImplementation : class
+    private static IServiceCollection AddInheritedTypes(
+        this IServiceCollection collection,
+        ServiceLifetime lifetime,
+        Type implementationType,
+        params Type[] inheritedTypes)
     {
-        var serviceDescriptors = GetServiceDescriptors(serviceLifetime, implementationFactory, serviceTypes);
-
-        // Register the services
-        foreach (var serviceDescriptor in serviceDescriptors)
-        {
-            services.Add(serviceDescriptor);
-        }
-
-        return services;
-    }
-
-    private static List<ServiceDescriptor> Add(this List<ServiceDescriptor> serviceDescriptors, ServiceLifetime lifetime, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type implementationType, params Type[] inheritedTypes)
-    {
-        ArgumentNullException.ThrowIfNull(serviceDescriptors);
-
+        // Add a ServiceDescriptors for each service type the implemented type inherits from
         if (inheritedTypes?.Length > 0)
         {
             foreach (var serviceType in inheritedTypes)
             {
-                // Ensure TImplementation is assignable to the serviceType
+                // Ensure each implementationType is assignable to the serviceType
                 if (!serviceType.IsAssignableFrom(implementationType))
                 {
                     throw new ArgumentException($"{serviceType.Name} must be assignable from {implementationType.Name}.");
                 }
 
                 // Add a new ServiceDescriptor for each interface of the service type using the previously registered concrete service
-                serviceDescriptors.Add(new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), lifetime));
+                var serviceDescriptor = new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), lifetime);
+                collection.Add(serviceDescriptor);
             }
         }
-
-        return serviceDescriptors;
+        return collection;
     }
 
-    public static IList<ServiceDescriptor> GetServiceDescriptors<TImplementation>(ServiceLifetime lifetime, Func<IServiceProvider, TImplementation> factory, params Type[] serviceTypes)
+    public static IServiceCollection Add<TImplementation>(
+        this IServiceCollection collection,
+        ServiceLifetime serviceLifetime,
+        Func<IServiceProvider, TImplementation> implementationFactory,
+        params Type[] inheritedTypes)
         where TImplementation : class
     {
-        ArgumentNullException.ThrowIfNull(factory);
-
-        var serviceDescriptors = new List<ServiceDescriptor>();
+        ArgumentNullException.ThrowIfNull(implementationFactory);
         var implementationType = typeof(TImplementation);
-
         // Transient lifestyle breaks this pattern by definition, so use scoped instead
-        var concreteLifetime = lifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : lifetime;
-
-        // Add a ServiceDescriptor for the concrete service type
-        serviceDescriptors.Add(new ServiceDescriptor(implementationType, factory, concreteLifetime));
-
-        // Add a ServiceDescriptors for each inherited service type
-        serviceDescriptors.Add(lifetime, implementationType, serviceTypes);
-
-        return serviceDescriptors;
-    }
-
-    public static IList<ServiceDescriptor> GetServiceDescriptors(ServiceLifetime lifetime, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type implementationType, params Type[] inheritedTypes)
-    {
-        ArgumentNullException.ThrowIfNull(implementationType);
-
-        var serviceDescriptors = new List<ServiceDescriptor>();
-
-        // Transient lifestyle breaks this pattern by definition, so use scoped instead
-        var concreteLifetime = lifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : lifetime;
-
-        // Add a ServiceDescriptor for the implemented service type
-        serviceDescriptors.Add(new ServiceDescriptor(implementationType, concreteLifetime));
-
-        // Add a ServiceDescriptors for each inherited service type
-        serviceDescriptors.Add(lifetime, implementationType, inheritedTypes);
-
-        return serviceDescriptors;
+        var concreteLifetime = serviceLifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : serviceLifetime;
+        // Add the implemented service type ServiceDescriptor
+        collection.Add(new ServiceDescriptor(implementationType, implementationFactory, concreteLifetime));
+        // Add a ServiceDescriptor for each inherited service type
+        collection.AddInheritedTypes(serviceLifetime, implementationType, inheritedTypes);
+        return collection;
     }
 
     public static IServiceCollection Add<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
-        this IServiceCollection services,
+        this IServiceCollection serviceCollection,
         ServiceLifetime serviceLifetime,
-        params Type[] serviceTypes)
-        where TImplementation : class
+        params Type[] inheritedTypes)
     {
-        var serviceDescriptors = GetServiceDescriptors(serviceLifetime, typeof(TImplementation), serviceTypes);
-
-        // Register the services
-        foreach (var serviceDescriptor in serviceDescriptors)
-        {
-            services.Add(serviceDescriptor);
-        }
-
-        return services;
+        var implementationType = typeof(TImplementation);
+        // Transient lifestyle breaks this pattern by definition, so use scoped instead
+        var concreteLifetime = serviceLifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : serviceLifetime;
+        // Add the implemented service type ServiceDescriptor
+        serviceCollection.Add(new ServiceDescriptor(implementationType, implementationType, concreteLifetime));
+        // Add a ServiceDescriptor for each inherited service type
+        AddInheritedTypes(serviceCollection, serviceLifetime, implementationType, inheritedTypes);
+        return serviceCollection;
     }
+
+    public static IServiceCollection Add<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+        this IServiceCollection services,
+        ServiceLifetime serviceLifetime)
+        where TService : class
+        where TImplementation : class, TService =>
+        services.Add<TImplementation>(serviceLifetime, typeof(TService));
+
+    public static IServiceCollection Add<T1, T2, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+        this IServiceCollection services,
+        ServiceLifetime serviceLifetime)
+        where T1 : class
+        where T2 : class
+        where TImplementation : class, T1, T2 =>
+        services.Add<TImplementation>(serviceLifetime, typeof(T1), typeof(T2));
+
+    public static IServiceCollection Add<T1, T2, T3, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+        this IServiceCollection services,
+        ServiceLifetime serviceLifetime)
+        where T1 : class
+        where T2 : class
+        where T3 : class
+        where TImplementation : class, T1, T2, T3 =>
+        services.Add<TImplementation>(serviceLifetime, typeof(T1), typeof(T2), typeof(T3));
 
     public static IServiceCollection AddSingleton<T1, T2, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
         this IServiceCollection services)

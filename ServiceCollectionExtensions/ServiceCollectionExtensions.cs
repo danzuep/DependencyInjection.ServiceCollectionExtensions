@@ -83,15 +83,21 @@ public static class ServiceCollectionExtensions
         where TImplementation : class, T1, T2, T3 =>
         services.Add(serviceLifetime, implementationFactory, typeof(T1), typeof(T2), typeof(T3));
 
-    private static IServiceCollection AddInheritedTypes(
-        IServiceCollection collection,
-        ServiceLifetime lifetime,
+    private static ServiceLifetime AddInheritedTypes(
+        IServiceCollection serviceCollection,
+        ServiceLifetime serviceLifetime,
         Type implementationType,
-        params Type[] inheritedTypes)
+        params Type[]? inheritedTypes)
     {
-        // Add a ServiceDescriptors for each service type the implemented type inherits from
+        var implementationLifetime = serviceLifetime;
         if (inheritedTypes?.Length > 0)
         {
+            // Transient lifestyle breaks this pattern by definition, so use scoped instead
+            if (implementationLifetime == ServiceLifetime.Transient)
+            {
+                implementationLifetime = ServiceLifetime.Scoped;
+            }
+            // Add a ServiceDescriptors for each service type the implemented type inherits from
             foreach (var serviceType in inheritedTypes)
             {
                 // Ensure each implementationType is assignable to the serviceType
@@ -101,43 +107,39 @@ public static class ServiceCollectionExtensions
                 }
 
                 // Add a new ServiceDescriptor for each interface of the service type using the previously registered concrete service
-                var serviceDescriptor = new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), lifetime);
-                collection.Add(serviceDescriptor);
+                var serviceDescriptor = new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), serviceLifetime);
+                serviceCollection.Add(serviceDescriptor);
             }
         }
-        return collection;
+        return implementationLifetime;
     }
 
     public static IServiceCollection Add<TImplementation>(
-        this IServiceCollection collection,
+        this IServiceCollection serviceCollection,
         ServiceLifetime serviceLifetime,
         Func<IServiceProvider, TImplementation> implementationFactory,
-        params Type[] inheritedTypes)
+        params Type[]? inheritedTypes)
         where TImplementation : class
     {
         ArgumentNullException.ThrowIfNull(implementationFactory);
         var implementationType = typeof(TImplementation);
-        // Transient lifestyle breaks this pattern by definition, so use scoped instead
-        var concreteLifetime = serviceLifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : serviceLifetime;
-        // Add the implemented service type ServiceDescriptor
-        collection.Add(new ServiceDescriptor(implementationType, implementationFactory, concreteLifetime));
         // Add a ServiceDescriptor for each inherited service type
-        AddInheritedTypes(collection, serviceLifetime, implementationType, inheritedTypes);
-        return collection;
+        var implementationLifetime = AddInheritedTypes(serviceCollection, serviceLifetime, implementationType, inheritedTypes);
+        // Add the implemented service type ServiceDescriptor
+        serviceCollection.Add(new ServiceDescriptor(implementationType, implementationFactory, implementationLifetime));
+        return serviceCollection;
     }
 
     public static IServiceCollection Add<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
         this IServiceCollection serviceCollection,
         ServiceLifetime serviceLifetime,
-        params Type[] inheritedTypes)
+        params Type[]? inheritedTypes)
     {
         var implementationType = typeof(TImplementation);
-        // Transient lifestyle breaks this pattern by definition, so use scoped instead
-        var concreteLifetime = serviceLifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : serviceLifetime;
-        // Add the implemented service type ServiceDescriptor
-        serviceCollection.Add(new ServiceDescriptor(implementationType, implementationType, concreteLifetime));
         // Add a ServiceDescriptor for each inherited service type
-        AddInheritedTypes(serviceCollection, serviceLifetime, implementationType, inheritedTypes);
+        var implementationLifetime = AddInheritedTypes(serviceCollection, serviceLifetime, implementationType, inheritedTypes);
+        // Add the implemented service type ServiceDescriptor
+        serviceCollection.Add(new ServiceDescriptor(implementationType, implementationType, implementationLifetime));
         return serviceCollection;
     }
 

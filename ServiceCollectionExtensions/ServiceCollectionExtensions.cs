@@ -84,7 +84,7 @@ public static class ServiceCollectionExtensions
         services.Add(serviceLifetime, implementationFactory, typeof(T1), typeof(T2), typeof(T3));
 
     private static IServiceCollection AddInheritedTypes(
-        this IServiceCollection collection,
+        IServiceCollection collection,
         ServiceLifetime lifetime,
         Type implementationType,
         params Type[] inheritedTypes)
@@ -122,7 +122,7 @@ public static class ServiceCollectionExtensions
         // Add the implemented service type ServiceDescriptor
         collection.Add(new ServiceDescriptor(implementationType, implementationFactory, concreteLifetime));
         // Add a ServiceDescriptor for each inherited service type
-        collection.AddInheritedTypes(serviceLifetime, implementationType, inheritedTypes);
+        AddInheritedTypes(collection, serviceLifetime, implementationType, inheritedTypes);
         return collection;
     }
 

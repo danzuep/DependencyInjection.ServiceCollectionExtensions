@@ -130,6 +130,20 @@ public static class ServiceCollectionExtensions
         return serviceCollection;
     }
 
+    public static IServiceCollection Add<TImplementation>(
+        this IServiceCollection serviceCollection,
+        TImplementation implementationInstance,
+        params Type[]? inheritedTypes)
+        where TImplementation : class
+    {
+        ArgumentNullException.ThrowIfNull(implementationInstance);
+        // Add a ServiceDescriptor for each inherited service type
+        _ = AddInheritedTypes(serviceCollection, ServiceLifetime.Singleton, typeof(TImplementation), inheritedTypes);
+        // Add the implemented service type ServiceDescriptor
+        serviceCollection.AddSingleton(implementationInstance);
+        return serviceCollection;
+    }
+
     public static IServiceCollection Add<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
         this IServiceCollection serviceCollection,
         ServiceLifetime serviceLifetime,

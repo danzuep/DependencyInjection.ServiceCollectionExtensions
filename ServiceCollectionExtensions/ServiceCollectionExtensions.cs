@@ -85,6 +85,7 @@ public static class ServiceCollectionExtensions
 
     private static ServiceLifetime AddInheritedTypes(
         IServiceCollection serviceCollection,
+        object? serviceKey,
         ServiceLifetime serviceLifetime,
         Type implementationType,
         params Type[]? inheritedTypes)
@@ -109,13 +110,23 @@ public static class ServiceCollectionExtensions
                 // Add a new ServiceDescriptor for each interface of the service type using the previously registered concrete service
                 var serviceDescriptor = new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), serviceLifetime);
                 serviceCollection.Add(serviceDescriptor);
+                if (serviceKey != null)
+                {
+                    var serviceDescriptorKeyed = new ServiceDescriptor(serviceType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), serviceLifetime);
+                    serviceCollection.Add(serviceDescriptorKeyed);
+                }
+            }
+            if (serviceKey != null)
+            {
+                serviceCollection.Add(new ServiceDescriptor(implementationType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), implementationLifetime));
             }
         }
         return implementationLifetime;
     }
 
-    public static IServiceCollection Add<TImplementation>(
+    public static IServiceCollection AddKeyed<TImplementation>(
         this IServiceCollection serviceCollection,
+        object? serviceKey,
         ServiceLifetime serviceLifetime,
         Func<IServiceProvider, TImplementation> implementationFactory,
         params Type[]? inheritedTypes)
@@ -124,38 +135,61 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(implementationFactory);
         var implementationType = typeof(TImplementation);
         // Add a ServiceDescriptor for each inherited service type
-        var implementationLifetime = AddInheritedTypes(serviceCollection, serviceLifetime, implementationType, inheritedTypes);
+        var implementationLifetime = AddInheritedTypes(serviceCollection, serviceKey, serviceLifetime, implementationType, inheritedTypes);
         // Add the implemented service type ServiceDescriptor
         serviceCollection.Add(new ServiceDescriptor(implementationType, implementationFactory, implementationLifetime));
         return serviceCollection;
     }
 
-    public static IServiceCollection Add<TImplementation>(
+    public static IServiceCollection AddKeyed<TImplementation>(
         this IServiceCollection serviceCollection,
+        object? serviceKey,
         TImplementation implementationInstance,
         params Type[]? inheritedTypes)
         where TImplementation : class
     {
         ArgumentNullException.ThrowIfNull(implementationInstance);
         // Add a ServiceDescriptor for each inherited service type
-        _ = AddInheritedTypes(serviceCollection, ServiceLifetime.Singleton, typeof(TImplementation), inheritedTypes);
+        _ = AddInheritedTypes(serviceCollection, serviceKey, ServiceLifetime.Singleton, typeof(TImplementation), inheritedTypes);
         // Add the implemented service type ServiceDescriptor
         serviceCollection.AddSingleton(implementationInstance);
         return serviceCollection;
     }
 
-    public static IServiceCollection Add<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection AddKeyed<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
         this IServiceCollection serviceCollection,
+        object? serviceKey,
         ServiceLifetime serviceLifetime,
         params Type[]? inheritedTypes)
     {
         var implementationType = typeof(TImplementation);
         // Add a ServiceDescriptor for each inherited service type
-        var implementationLifetime = AddInheritedTypes(serviceCollection, serviceLifetime, implementationType, inheritedTypes);
+        var implementationLifetime = AddInheritedTypes(serviceCollection, serviceKey, serviceLifetime, implementationType, inheritedTypes);
         // Add the implemented service type ServiceDescriptor
         serviceCollection.Add(new ServiceDescriptor(implementationType, implementationType, implementationLifetime));
         return serviceCollection;
     }
+
+    public static IServiceCollection Add<TImplementation>(
+        this IServiceCollection serviceCollection,
+        ServiceLifetime serviceLifetime,
+        Func<IServiceProvider, TImplementation> implementationFactory,
+        params Type[]? inheritedTypes)
+        where TImplementation : class =>
+        serviceCollection.AddKeyed(null, serviceLifetime, implementationFactory, inheritedTypes);
+
+    public static IServiceCollection Add<TImplementation>(
+        this IServiceCollection serviceCollection,
+        TImplementation implementationInstance,
+        params Type[]? inheritedTypes)
+        where TImplementation : class =>
+        serviceCollection.AddKeyed(null, implementationInstance, inheritedTypes);
+
+    public static IServiceCollection Add<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+        this IServiceCollection serviceCollection,
+        ServiceLifetime serviceLifetime,
+        params Type[]? inheritedTypes) =>
+        serviceCollection.AddKeyed<TImplementation>(null, serviceLifetime, inheritedTypes);
 
     public static IServiceCollection Add<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
         this IServiceCollection services,

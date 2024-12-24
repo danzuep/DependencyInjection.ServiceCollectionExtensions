@@ -1,6 +1,8 @@
 namespace DependencyInjectionServiceCollectionExtensionsTests;
 
+using System;
 using System.Globalization;
+using System.IO.Abstractions;
 using DependencyInjectionServiceCollectionExtensions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -182,6 +184,49 @@ public class ServiceCollectionExtensionsTests
         // Assert
         Assert.Same(i1, i2);
         Assert.Same(i2, i3);
+    }
+
+    [Fact]
+    public void Services_Should_Be_Same_Instance_When_Registered_With_Key()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var key = nameof(FileSystem);
+        services.AddSingleton<FileSystem>();
+        services.AddSingleton<IFileSystem>(provider =>
+            provider.GetRequiredService<FileSystem>());
+        services.AddKeyedSingleton(key, (provider, _) =>
+            provider.GetRequiredService<FileSystem>());
+        services.AddKeyedSingleton(key, (provider, _) =>
+            provider.GetRequiredService<IFileSystem>());
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Act
+        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
+        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
+
+        // Assert
+        Assert.Same(test1, test2);
+    }
+
+    [Theory]
+    [InlineData(ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Transient)]
+    public void Services_Should_Be_Same_Instance_When_Registered_With_Add_Key(ServiceLifetime serviceLifetime)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var key = nameof(FileSystem);
+        services.AddKeyed<FileSystem>(key, serviceLifetime, typeof(IFileSystem));
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Act
+        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
+        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
+
+        // Assert
+        Assert.Same(test1, test2);
     }
 
     protected static T FunctionMaxInputs<T>(Func<string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, T> test)

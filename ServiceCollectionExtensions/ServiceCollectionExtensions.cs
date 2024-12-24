@@ -98,7 +98,7 @@ public static class ServiceCollectionExtensions
             {
                 implementationLifetime = ServiceLifetime.Scoped;
             }
-            // Add a ServiceDescriptors for each service type the implemented type inherits from
+            // Add a ServiceDescriptor for each service type the implemented type inherits from
             foreach (var serviceType in inheritedTypes)
             {
                 // Ensure each implementationType is assignable to the serviceType
@@ -108,17 +108,18 @@ public static class ServiceCollectionExtensions
                 }
 
                 // Add a new ServiceDescriptor for each interface of the service type using the previously registered concrete service
-                var serviceDescriptor = new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), serviceLifetime);
-                serviceCollection.Add(serviceDescriptor);
+                var serviceDescriptorInherited = new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), serviceLifetime);
+                serviceCollection.Add(serviceDescriptorInherited);
                 if (serviceKey != null)
                 {
-                    var serviceDescriptorKeyed = new ServiceDescriptor(serviceType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), serviceLifetime);
-                    serviceCollection.Add(serviceDescriptorKeyed);
+                    var serviceDescriptorInheritedKeyed = new ServiceDescriptor(serviceType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), serviceLifetime);
+                    serviceCollection.Add(serviceDescriptorInheritedKeyed);
                 }
             }
             if (serviceKey != null)
             {
-                serviceCollection.Add(new ServiceDescriptor(implementationType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), implementationLifetime));
+                var serviceDescriptorKeyed = new ServiceDescriptor(implementationType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), serviceLifetime);
+                serviceCollection.Add(serviceDescriptorKeyed);
             }
         }
         return implementationLifetime;
@@ -259,4 +260,77 @@ public static class ServiceCollectionExtensions
         where T3 : class
         where TImplementation : class, T1, T2, T3 =>
         services.Add<TImplementation>(ServiceLifetime.Scoped, typeof(T1), typeof(T2), typeof(T3));
+
+    #region Other ideas
+
+    //[Experimental("TypedServices")]
+    public static IServiceCollection AddAllInterfaces(
+        this IServiceCollection serviceCollection,
+        Type implementationType,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+    {
+        ArgumentNullException.ThrowIfNull(implementationType);
+        foreach (var assemblyType in implementationType.Assembly.GetTypes())
+        {
+            foreach (var serviceType in assemblyType.GetInterfaces())
+            {
+                if (serviceType.IsAssignableFrom(implementationType))
+                {
+                    serviceCollection.Add(new ServiceDescriptor(serviceType, implementationType, lifetime));
+                }
+            }
+        }
+        return serviceCollection;
+    }
+
+    //[Experimental("ServiceInterfaces")]
+    public static ServiceLifetime AddWithInterfaces<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+        this IServiceCollection serviceCollection,
+        ServiceLifetime serviceLifetime,
+        object? serviceKey = null)
+    {
+        // Add a ServiceDescriptor for the implemented service type
+        var implementationType = typeof(TImplementation);
+        // Transient lifestyle breaks this pattern by definition, so use scoped instead
+        var implementationLifetime = serviceLifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : serviceLifetime;
+        serviceCollection.Add(new ServiceDescriptor(implementationType, implementationType, implementationLifetime));
+        if (serviceKey != null)
+        {
+            serviceCollection.Add(new ServiceDescriptor(implementationType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), serviceLifetime));
+        }
+        // Add a ServiceDescriptor for each service type the implemented type inherits from
+        foreach (var serviceType in implementationType.GetInterfaces())
+        {
+            if (serviceType.IsAssignableFrom(implementationType))
+            {
+                serviceCollection.Add(new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), serviceLifetime));
+                if (serviceKey != null)
+                {
+                    serviceCollection.Add(new ServiceDescriptor(serviceType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), serviceLifetime));
+                }
+            }
+        }
+        return implementationLifetime;
+    }
+
+    //[Experimental("NamedServices")]
+    public static IServiceCollection AddNamed<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+        this IServiceCollection serviceCollection,
+        object? serviceKey,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TService : class
+        where TImplementation : class, TService
+    {
+        var serviceType = typeof(TService);
+        var implementationType = typeof(TImplementation);
+        serviceKey ??= implementationType.Name;
+        var implementationLifetime = lifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : lifetime;
+        serviceCollection.Add(new ServiceDescriptor(implementationType, implementationType, implementationLifetime));
+        serviceCollection.Add(new ServiceDescriptor(implementationType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), lifetime));
+        serviceCollection.Add(new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), lifetime));
+        serviceCollection.Add(new ServiceDescriptor(serviceType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), lifetime));
+        return serviceCollection;
+    }
+
+    #endregion
 }

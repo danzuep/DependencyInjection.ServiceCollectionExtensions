@@ -247,12 +247,66 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddNamed()
+    public void AddNamed_DynamicallyAccessedConstructor()
     {
         // Arrange
         var services = new ServiceCollection();
         var key = nameof(FileSystem);
         _ = services.AddNamed<IFileSystem, FileSystem>(null, ServiceLifetime.Singleton);
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Act
+        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
+        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
+
+        // Assert
+        Assert.NotNull(test1);
+        Assert.Same(test1, test2);
+    }
+
+    [Fact]
+    public void AddNamed_Instance()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var key = nameof(FileSystem);
+        _ = services.AddNamed<IFileSystem, FileSystem>(null, new FileSystem());
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Act
+        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
+        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
+
+        // Assert
+        Assert.NotNull(test1);
+        Assert.Same(test1, test2);
+    }
+
+    [Fact]
+    public void AddNamed_Factory1()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var key = nameof(FileSystem);
+        _ = services.AddNamed<IFileSystem, FileSystem>(null, (_) => new FileSystem(), ServiceLifetime.Singleton);
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Act
+        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
+        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
+
+        // Assert
+        Assert.NotNull(test1);
+        Assert.Same(test1, test2);
+    }
+
+    [Fact]
+    public void AddNamed_Factory2()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var key = nameof(FileSystem);
+        _ = services.AddNamed<IFileSystem, FileSystem>(null, (_, _) => new FileSystem(), ServiceLifetime.Singleton);
         var serviceProvider = services.BuildServiceProvider();
 
         // Act

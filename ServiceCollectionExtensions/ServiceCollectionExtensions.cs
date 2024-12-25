@@ -313,6 +313,22 @@ public static class ServiceCollectionExtensions
         return implementationLifetime;
     }
 
+    private static ServiceLifetime AddKeyed<TService, TImplementation>(
+        IServiceCollection services,
+        object? serviceKey,
+        ServiceLifetime lifetime)
+        where TService : class
+        where TImplementation : class, TService
+    {
+        var serviceType = typeof(TService);
+        var implementationType = typeof(TImplementation);
+        serviceKey ??= implementationType.Name;
+        services.Add(new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), lifetime));
+        services.Add(new ServiceDescriptor(serviceType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), lifetime));
+        services.Add(new ServiceDescriptor(implementationType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), lifetime));
+        return lifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : lifetime;
+    }
+
     //[Experimental("NamedServices")]
     public static IServiceCollection AddNamed<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
         this IServiceCollection serviceCollection,
@@ -321,16 +337,49 @@ public static class ServiceCollectionExtensions
         where TService : class
         where TImplementation : class, TService
     {
-        var serviceType = typeof(TService);
         var implementationType = typeof(TImplementation);
-        serviceKey ??= implementationType.Name;
-        var implementationLifetime = lifetime == ServiceLifetime.Transient ? ServiceLifetime.Scoped : lifetime;
+        var implementationLifetime = AddKeyed<TService, TImplementation>(serviceCollection, serviceKey, lifetime);
         serviceCollection.Add(new ServiceDescriptor(implementationType, implementationType, implementationLifetime));
-        serviceCollection.Add(new ServiceDescriptor(implementationType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), lifetime));
-        serviceCollection.Add(new ServiceDescriptor(serviceType, provider => provider.GetRequiredService(implementationType), lifetime));
-        serviceCollection.Add(new ServiceDescriptor(serviceType, serviceKey, (provider, _) => provider.GetRequiredService(implementationType), lifetime));
         return serviceCollection;
     }
+
+    //[Experimental("NamedServiceInstance")]
+    public static IServiceCollection AddNamed<TService, TImplementation>(
+        this IServiceCollection serviceCollection,
+        object? serviceKey,
+        TImplementation implementationInstance,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TService : class
+        where TImplementation : class, TService
+    {
+        _ = AddKeyed<TService, TImplementation>(serviceCollection, serviceKey, lifetime);
+        serviceCollection.AddSingleton(implementationInstance);
+        return serviceCollection;
+    }
+
+    //[Experimental("NamedServiceFactory")]
+    public static IServiceCollection AddNamed<TService, TImplementation>(
+        this IServiceCollection serviceCollection,
+        object? serviceKey,
+        Func<IServiceProvider, TImplementation> implementationFactory,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TService : class
+        where TImplementation : class, TService
+    {
+        var implementationLifetime = AddKeyed<TService, TImplementation>(serviceCollection, serviceKey, lifetime);
+        serviceCollection.Add(new ServiceDescriptor(typeof(TImplementation), implementationFactory, implementationLifetime));
+        return serviceCollection;
+    }
+
+    //[Experimental("NamedServiceFactoryImplementation")]
+    public static IServiceCollection AddNamed<TService, TImplementation>(
+        this IServiceCollection serviceCollection,
+        object? serviceKey,
+        Func<IServiceProvider, object?, TImplementation> implementationFactory,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TService : class
+        where TImplementation : class, TService =>
+        serviceCollection.AddNamed<TService, TImplementation>(serviceKey, p => implementationFactory(p, null), lifetime);
 
     #endregion
 }

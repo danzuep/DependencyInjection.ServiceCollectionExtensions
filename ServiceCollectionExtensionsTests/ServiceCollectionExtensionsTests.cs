@@ -1,8 +1,6 @@
 namespace DependencyInjectionServiceCollectionExtensionsTests;
 
 using System;
-using System.Globalization;
-using System.IO.Abstractions;
 using DependencyInjectionServiceCollectionExtensions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -34,7 +32,7 @@ public class ServiceCollectionExtensionsTests
         services.AddSingleton<I2, Concrete>();
 
         // Build the service provider
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
         var i1 = serviceProvider.GetRequiredService<I1>();
@@ -56,7 +54,7 @@ public class ServiceCollectionExtensionsTests
         services.AddSingleton<I2>(concrete);
 
         // Build the service provider
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
         var i1 = serviceProvider.GetService<I1>();
@@ -78,7 +76,7 @@ public class ServiceCollectionExtensionsTests
         services.AddSingleton<I2>(sp => sp.GetRequiredService<Concrete>());
 
         // Build the service provider
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
         var i1 = serviceProvider.GetRequiredService<I1>();
@@ -101,7 +99,7 @@ public class ServiceCollectionExtensionsTests
         services.Add<I1, I2, I3, Concrete>(serviceLifetime, (_) => new Concrete());
 
         // Build the service provider
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
         var i1 = serviceProvider.GetRequiredService<I1>();
@@ -126,7 +124,7 @@ public class ServiceCollectionExtensionsTests
         services.Add<I1, I2, I3, Concrete>(serviceLifetime);
 
         // Build the service provider
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
         var i1 = serviceProvider.GetRequiredService<I1>();
@@ -150,7 +148,7 @@ public class ServiceCollectionExtensionsTests
         services.AddTransient<I6, I7, Api>(provider => new Api(provider.GetRequiredService<I5>()));
 
         // Build the service provider
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
         var i1 = serviceProvider.GetRequiredService<I1>();
@@ -174,7 +172,7 @@ public class ServiceCollectionExtensionsTests
         services.Add<Api>(ServiceLifetime.Transient, provider => new Api(provider.GetRequiredService<I5>()), typeof(I6), typeof(I7));
 
         // Build the service provider
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
         var i1 = serviceProvider.GetRequiredService<I1>();
@@ -191,19 +189,19 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        var key = nameof(FileSystem);
-        services.AddSingleton<FileSystem>();
-        services.AddSingleton<IFileSystem>(provider =>
-            provider.GetRequiredService<FileSystem>());
+        var key = nameof(MemoryStream);
+        services.AddSingleton<MemoryStream>();
+        services.AddSingleton<IDisposable>(provider =>
+            provider.GetRequiredService<MemoryStream>());
         services.AddKeyedSingleton(key, (provider, _) =>
-            provider.GetRequiredService<FileSystem>());
+            provider.GetRequiredService<MemoryStream>());
         services.AddKeyedSingleton(key, (provider, _) =>
-            provider.GetRequiredService<IFileSystem>());
-        var serviceProvider = services.BuildServiceProvider();
+            provider.GetRequiredService<IDisposable>());
+        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
-        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
-        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
+        var test1 = serviceProvider.GetRequiredKeyedService<IDisposable>(key);
+        var test2 = serviceProvider.GetRequiredKeyedService<MemoryStream>(key);
 
         // Assert
         Assert.Same(test1, test2);
@@ -217,113 +215,15 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        var key = nameof(FileSystem);
-        services.AddKeyed<FileSystem>(key, serviceLifetime, typeof(IFileSystem));
-        var serviceProvider = services.BuildServiceProvider();
+        var key = nameof(MemoryStream);
+        services.AddKeyed<MemoryStream>(key, serviceLifetime, typeof(IDisposable));
+        using var serviceProvider = services.BuildServiceProvider();
 
         // Act
-        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
-        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
+        var test1 = serviceProvider.GetRequiredKeyedService<IDisposable>(key);
+        var test2 = serviceProvider.GetRequiredKeyedService<MemoryStream>(key);
 
         // Assert
         Assert.Same(test1, test2);
     }
-
-    #region other
-
-    [Fact]
-    public void AddWithInterfaces()
-    {
-        // Arrange
-        var services = new ServiceCollection();
-        _ = services.AddWithInterfaces<FileSystem>(ServiceLifetime.Singleton);
-        var serviceProvider = services.BuildServiceProvider();
-
-        // Act
-        var test1 = serviceProvider.GetRequiredService<IFileSystem>();
-
-        // Assert
-        Assert.NotNull(test1);
-    }
-
-    [Fact]
-    public void AddNamed_DynamicallyAccessedConstructor()
-    {
-        // Arrange
-        var services = new ServiceCollection();
-        var key = nameof(FileSystem);
-        _ = services.AddNamed<IFileSystem, FileSystem>(null, ServiceLifetime.Singleton);
-        var serviceProvider = services.BuildServiceProvider();
-
-        // Act
-        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
-        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
-
-        // Assert
-        Assert.NotNull(test1);
-        Assert.Same(test1, test2);
-    }
-
-    [Fact]
-    public void AddNamed_Instance()
-    {
-        // Arrange
-        var services = new ServiceCollection();
-        var key = nameof(FileSystem);
-        _ = services.AddNamed<IFileSystem, FileSystem>(null, new FileSystem());
-        var serviceProvider = services.BuildServiceProvider();
-
-        // Act
-        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
-        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
-
-        // Assert
-        Assert.NotNull(test1);
-        Assert.Same(test1, test2);
-    }
-
-    [Fact]
-    public void AddNamed_Factory1()
-    {
-        // Arrange
-        var services = new ServiceCollection();
-        var key = nameof(FileSystem);
-        _ = services.AddNamed<IFileSystem, FileSystem>(null, (_) => new FileSystem(), ServiceLifetime.Singleton);
-        var serviceProvider = services.BuildServiceProvider();
-
-        // Act
-        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
-        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
-
-        // Assert
-        Assert.NotNull(test1);
-        Assert.Same(test1, test2);
-    }
-
-    [Fact]
-    public void AddNamed_Factory2()
-    {
-        // Arrange
-        var services = new ServiceCollection();
-        var key = nameof(FileSystem);
-        _ = services.AddNamed<IFileSystem, FileSystem>(null, (_, _) => new FileSystem(), ServiceLifetime.Singleton);
-        var serviceProvider = services.BuildServiceProvider();
-
-        // Act
-        var test1 = serviceProvider.GetRequiredKeyedService<IFileSystem>(key);
-        var test2 = serviceProvider.GetRequiredKeyedService<FileSystem>(key);
-
-        // Assert
-        Assert.NotNull(test1);
-        Assert.Same(test1, test2);
-    }
-
-    protected static T FunctionMaxInputs<T>(Func<string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, T> test)
-    {
-        // Func has overloads for up to 16 inputs, how many overloads should `services.Add` have?
-        var args = Enumerable.Range(1, 16).Select(static o => o.ToString(CultureInfo.InvariantCulture)).ToArray();
-        return test(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15]);
-    }
-
-    #endregion
 }

@@ -9,6 +9,9 @@ internal sealed class InnerFactory<T> { }
 
 public static class AddDecoratorServiceCollectionExtensions
 {
+    /// <summary>
+    /// A pipeline of decorators for the specified service type.
+    /// </summary>
     //[Experimental("AddDecorator01", Message = "Untested")]
     //public static IServiceCollection AddDecorator<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TDecorator>(
     //    this IServiceCollection services,

@@ -3,9 +3,9 @@ namespace DependencyInjectionServiceCollectionExtensions;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 
-public static class AddServiceServiceCollectionExtensions
+public static class AddSelfServiceCollectionExtensions
 {
-    public static IServiceCollection AddService<TService, TImplementation>(
+    public static IServiceCollection AddSelf<TService, TImplementation>(
         this IServiceCollection serviceCollection,
         TImplementation implementationInstance,
         ServiceLifetime lifetime = ServiceLifetime.Singleton)
@@ -17,7 +17,7 @@ public static class AddServiceServiceCollectionExtensions
         return serviceCollection;
     }
 
-    public static IServiceCollection AddService<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
+    public static IServiceCollection AddSelf<TService, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImplementation>(
         this IServiceCollection serviceCollection,
         ServiceLifetime lifetime = ServiceLifetime.Singleton)
         where TService : class
@@ -31,7 +31,7 @@ public static class AddServiceServiceCollectionExtensions
         return serviceCollection;
     }
 
-    public static IServiceCollection AddService<TService, TImplementation>(
+    public static IServiceCollection AddSelf<TService, TImplementation>(
         this IServiceCollection serviceCollection,
         Func<IServiceProvider, TImplementation> implementationFactory,
         ServiceLifetime lifetime = ServiceLifetime.Singleton)

@@ -6,6 +6,16 @@ using System.Globalization;
 using DependencyInjectionServiceCollectionExtensions;
 using Microsoft.Extensions.DependencyInjection;
 
+public class DecoratorA : I3
+{
+    public DecoratorA() => Console.WriteLine($"[{nameof(DecoratorA)}]");
+}
+
+public class DecoratorB : I3
+{
+    public DecoratorB() => Console.WriteLine($"[{nameof(DecoratorB)}]");
+}
+
 public class ExperimentalServiceCollectionExtensionsTests
 {
     [Experimental("AddImplementation01", Message = "Untested")]
@@ -35,6 +45,29 @@ public class ExperimentalServiceCollectionExtensionsTests
         var result = serviceProvider.GetService<Guid>();
         // Assert
         Assert.Equal(typeof(Guid), result.GetType());
+    }
+
+    [Experimental("AddDecorator01", Message = "Under test")]
+    [Fact]
+    public void AddDecorator()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        services.AddSingleton<Concrete>();
+        services.AddSingleton<I1>(sp => sp.GetRequiredService<Concrete>());
+        services.AddSingleton<I2>(sp => sp.GetRequiredService<Concrete>());
+        services.AddSingleton<I3>(sp => sp.GetRequiredService<Concrete>());
+        // the last registered decorator is the one that will be injected
+        services.AddDecorator<I3, DecoratorA>(ServiceLifetime.Transient);
+        services.AddDecorator<I3, DecoratorB>(ServiceLifetime.Transient);
+
+        using var serviceProvider = services.BuildServiceProvider();
+        // Act
+        var result = serviceProvider.GetService<I3>();
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(typeof(DecoratorB), result.GetType());
     }
 
     [Fact]

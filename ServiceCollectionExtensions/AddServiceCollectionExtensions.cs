@@ -5,6 +5,37 @@ using Microsoft.Extensions.DependencyInjection;
 
 public static class AddServiceCollectionExtensions
 {
+    [Experimental("AddImplementation01", Message = "Untested")]
+    public static IServiceCollection AddImplementation<TImplementation>(
+        this IServiceCollection serviceCollection,
+        TImplementation implementationInstance,
+        params Type[]? inheritedTypes)
+    {
+        ArgumentNullException.ThrowIfNull(implementationInstance);
+        var implementationType = typeof(TImplementation);
+        // Add a ServiceDescriptor for each inherited service type
+        _ = serviceCollection.AddInheritedTypes(null, ServiceLifetime.Singleton, implementationType, inheritedTypes);
+        // Add the implemented service type ServiceDescriptor
+        serviceCollection.Add(new ServiceDescriptor(implementationType, implementationInstance.GetType(), ServiceLifetime.Singleton));
+        return serviceCollection;
+    }
+
+    [Experimental("AddImplementation02", Message = "Untested")]
+    public static IServiceCollection AddImplementation<TImplementation>(
+        this IServiceCollection serviceCollection,
+        ServiceLifetime serviceLifetime,
+        Func<IServiceProvider, TImplementation> implementationFactory,
+        params Type[]? inheritedTypes)
+    {
+        ArgumentNullException.ThrowIfNull(implementationFactory);
+        var implementationType = typeof(TImplementation);
+        // Add a ServiceDescriptor for each inherited service type
+        var implementationLifetime = serviceCollection.AddInheritedTypes(null, serviceLifetime, implementationType, inheritedTypes);
+        // Add the implemented service type ServiceDescriptor
+        serviceCollection.Add(new ServiceDescriptor(implementationType, implementationFactory, implementationLifetime));
+        return serviceCollection;
+    }
+
     public static IServiceCollection Add<TImplementation>(
         this IServiceCollection serviceCollection,
         TImplementation implementationInstance,

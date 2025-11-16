@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 public static class AddKeyedServiceCollectionExtensions
 {
     internal static ServiceLifetime AddInheritedTypes(
-        IServiceCollection serviceCollection,
+        this IServiceCollection serviceCollection,
         object? serviceKey,
         ServiceLifetime serviceLifetime,
         Type implementationType,

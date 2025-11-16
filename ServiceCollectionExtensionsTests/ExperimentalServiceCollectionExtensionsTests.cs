@@ -1,12 +1,42 @@
 namespace DependencyInjectionServiceCollectionExtensionsTests;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using DependencyInjectionServiceCollectionExtensions;
 using Microsoft.Extensions.DependencyInjection;
 
 public class ExperimentalServiceCollectionExtensionsTests
 {
+    [Experimental("AddImplementation01", Message = "Untested")]
+    [Fact(Skip = "Fails")]
+    public void Services_Should_Be_Valid_When_Registered_With_AddImplementation()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var guid = Guid.NewGuid();
+        services.AddImplementation(guid, typeof(IComparable), typeof(IFormattable), typeof(ISpanFormattable), typeof(IUtf8SpanFormattable));
+        using var serviceProvider = services.BuildServiceProvider();
+        // Act
+        var result = serviceProvider.GetService<Guid>();
+        // Assert
+        Assert.Equal(typeof(Guid), result.GetType());
+    }
+
+    [Experimental("AddImplementation02", Message = "Untested")]
+    [Fact(Skip = "Fails")]
+    public void Services_Should_Be_Valid_When_Registered_With_AddImplementation_Factory()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        services.AddImplementation(ServiceLifetime.Singleton, _ => Guid.NewGuid(), typeof(IComparable), typeof(IFormattable), typeof(ISpanFormattable), typeof(IUtf8SpanFormattable));
+        using var serviceProvider = services.BuildServiceProvider();
+        // Act
+        var result = serviceProvider.GetService<Guid>();
+        // Assert
+        Assert.Equal(typeof(Guid), result.GetType());
+    }
+
     [Fact]
     public void AddWithInterfaces()
     {

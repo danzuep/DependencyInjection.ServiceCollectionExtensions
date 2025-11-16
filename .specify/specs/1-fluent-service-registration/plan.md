@@ -16,11 +16,11 @@ This plan documents compatibility, tests, and constitution checks.
 
 ## Technical Context
 
-**Language/Version**: C# (.NET 10 or later; validate target frameworks in Phase 1)  
+**Language/Version**: C# .NET (validate target frameworks in Phase 1)  
+**Target Platform**: netstandard2.0 and net10 (supported target frameworks will be finalized in Phase 1)  
 **Primary Dependencies**: Microsoft.Extensions.DependencyInjection (already in use); avoid adding other runtime packages.  
 **Storage**: N/A  
-**Testing**: xUnit or NUnit (unit + integration), Host/GenericHost integration tests.  
-**Target Platform**: .NET 8+ (supported target frameworks will be finalized in Phase 1)  
+**Testing**: xUnit (unit + integration), Host/GenericHost integration tests.  
 **Project Type**: Single project library (package) delivering the fluent API extension.  
 **Performance Goals**: No measurable regression compared to equivalent manual factory registration; keep allocations minimal.  
 **Constraints**: Must not change IServiceCollection or ServiceDescriptor semantics; must produce deterministic ServiceDescriptors for observability.  
@@ -40,9 +40,7 @@ If any check cannot be satisfied at planning time, mitigation and acceptance cri
 ## Project Structure
 
 ```text
-
-
-specs/1-fluent-service-registration/
+.specify/specs/1-fluent-service-registration/
 ├── plan.md
 ├── research.md          # to be produced in Phase 0
 ├── data-model.md        # probably N/A; will include mapping of fluent calls -\> ServiceDescriptor
@@ -73,6 +71,7 @@ tests/
 └── contract/
     └── PublicApiContractTests.cs
 ```
+
 **Structure Decision**: Single library project named FluentDependencyInjection under src/ with tests/ unit and integration folders. Public API surface is in FluentDependencyInjection root namespace and marked clearly in README.
 
 ## Complexity Tracking
